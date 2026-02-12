@@ -9,8 +9,13 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1"
 });
 
 const jiraAuth = {
@@ -53,8 +58,13 @@ Description: ${description}
 Return a short analysis.
 `;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  // const completion = await openai.chat.completions.create({
+  //   model: "gpt-4o-mini",
+  //   messages: [{ role: "user", content: prompt }],
+  // });
+  
+    const completion = await openai.chat.completions.create({
+    model: "llama3-8b-8192",
     messages: [{ role: "user", content: prompt }],
   });
 
