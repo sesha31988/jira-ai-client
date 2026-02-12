@@ -106,6 +106,8 @@ app.post("/jira-webhook", async (req, res) => {
 
     console.log("AI Response generated");
 
+    console.log("Posting to:", `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${issueKey}/comment`);
+
     // Post comment back to Jira
     await axios.post(
       `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${issueKey}/comment`,
