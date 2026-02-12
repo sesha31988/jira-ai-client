@@ -112,7 +112,21 @@ app.post("/jira-webhook", async (req, res) => {
     await axios.post(
       `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${issueKey}/comment`,
       {
-        body: `🤖 AI Analysis:\n\n${aiResponse}`
+        body: {
+          type: "doc",
+          version: 1,
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: `🤖 AI Analysis:\n\n${aiResponse}`
+                }
+              ]
+            }
+          ]
+        }
       },
       {
         headers: {
