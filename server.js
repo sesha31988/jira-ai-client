@@ -54,7 +54,7 @@ function getConfluenceLink(summary, description) {
     };
   }
 
-  iif (/mfa|otp/.test(text)) {
+  if (/mfa|otp/.test(text)) {
     return {
       title: "Multi-Factor Authentication Issues",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/1081345/Multi-Factor+Authentication+Issues"
