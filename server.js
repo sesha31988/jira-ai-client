@@ -23,37 +23,38 @@ const openai = new OpenAI({
 ============================ */
 
 function getConfluenceLink(summary, description) {
-  const text = (summary + " " + description).toLowerCase();
+  const text = (summary + " " + description).toLowerCase().replace(/[\W_]+/g, " "); // replace punctuation/underscores with space
+  console.log("Combined text for KB lookup:", text);
 
-  if (text.includes("password reset")) {
+  if (/password\s*reset/.test(text)) {
     return {
       title: "Password Reset Failure Guide",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/851969/Password+Reset+Failure+Guide"
     };
   }
 
-  if (text.includes("session expired")) {
+  if (/session\s*expired/.test(text)) {
     return {
       title: "Session Expired Troubleshooting",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/917505/Session+Expired+Troubleshooting"
     };
   }
 
-  if (text.includes("account locked")) {
+    if (/account\s*locked/.test(text)) {
     return {
       title: "Account Locked Resolution Steps",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/917512/Account+Locked+Resolution+Steps"
     };
   }
 
-  if (text.includes("sso")) {
+  if (/sso/.test(text)) {
     return {
       title: "SSO Login Troubleshooting",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/983041/SSO+Login+Troubleshooting"
     };
   }
 
-  if (text.includes("mfa") || text.includes("otp")) {
+  iif (/mfa|otp/.test(text)) {
     return {
       title: "Multi-Factor Authentication Issues",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/1081345/Multi-Factor+Authentication+Issues"
@@ -161,6 +162,7 @@ app.post("/jira-webhook", async (req, res) => {
     ============================ */
 
     const kbPage = getConfluenceLink(summary, description);
+    console.log("KB link found:", kbPage);
 
     let finalComment = ` AI Analysis:\n\n${aiResponse}`;
 
