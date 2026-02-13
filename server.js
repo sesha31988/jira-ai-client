@@ -9,14 +9,59 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY,
-// });
+/* ============================
+   GROQ CONFIG (OpenAI format)
+============================ */
 
 const openai = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: "https://api.groq.com/openai/v1"
 });
+
+/* ============================
+   CONFLUENCE KB MAPPING
+============================ */
+
+function getConfluenceLink(summary, description) {
+  const text = (summary + " " + description).toLowerCase();
+
+  if (text.includes("password reset")) {
+    return {
+      title: "Password Reset Failure Guide",
+      url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/851969/Password+Reset+Failure+Guide"
+    };
+  }
+
+  if (text.includes("session expired")) {
+    return {
+      title: "Session Expired Troubleshooting",
+      url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/917505/Session+Expired+Troubleshooting"
+    };
+  }
+
+  if (text.includes("account locked")) {
+    return {
+      title: "Account Locked Resolution Steps",
+      url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/917512/Account+Locked+Resolution+Steps"
+    };
+  }
+
+  if (text.includes("sso")) {
+    return {
+      title: "SSO Login Troubleshooting",
+      url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/983041/SSO+Login+Troubleshooting"
+    };
+  }
+
+  if (text.includes("mfa") || text.includes("otp")) {
+    return {
+      title: "Multi-Factor Authentication Issues",
+      url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/1081345/Multi-Factor+Authentication+Issues"
+    };
+  }
+
+  return null;
+}
 
 const jiraAuth = {
   username: process.env.JIRA_EMAIL,
@@ -58,11 +103,6 @@ Description: ${description}
 Return a short analysis.
 `;
 
-  // const completion = await openai.chat.completions.create({
-  //   model: "gpt-4o-mini",
-  //   messages: [{ role: "user", content: prompt }],
-  // });
-
     const completion = await openai.chat.completions.create({
     model: "llama-3.1-8b-instant",
     messages: [{ role: "user", content: prompt }],
@@ -71,13 +111,17 @@ Return a short analysis.
   return completion.choices[0].message.content;
 }
 
+/* ============================
+   JIRA WEBHOOK ENDPOINT
+============================ */
+
 app.post("/jira-webhook", async (req, res) => {
   try {
     console.log("Webhook received");
 
     const issueKey = req.body?.issue?.key;
-    const summary = req.body?.issue?.fields?.summary;
-    const description = req.body?.issue?.fields?.description;
+    const summary = req.body?.issue?.fields?.summary || "";
+    const description = req.body?.issue?.fields?.description || "";
 
     if (!issueKey) {
       console.log("No issue key found");
@@ -87,13 +131,17 @@ app.post("/jira-webhook", async (req, res) => {
     console.log("Issue Key:", issueKey);
     console.log("Summary:", summary);
 
-    // Call Groq
+    /* ============================
+       CALL GROQ AI
+    ============================ */
+
     const completion = await openai.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
-        {
+         {
           role: "system",
-          content: "You are an IT incident analysis assistant."
+          content:
+            "You are an IT support assistant. Analyze login/password issues and provide troubleshooting steps, severity suggestion, and next action."
         },
         {
           role: "user",
@@ -107,8 +155,23 @@ app.post("/jira-webhook", async (req, res) => {
     console.log("AI Response generated");
 
     console.log("Posting to:", `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${issueKey}/comment`);
+    
+    /* ============================
+       GET CONFLUENCE KB LINK
+    ============================ */
 
-    // Post comment back to Jira
+    const kbPage = getConfluenceLink(summary, description);
+
+    let finalComment = ` AI Analysis:\n\n${aiResponse}`;
+
+    if (kbPage) {
+      finalComment += `\n\n Recommended Knowledge Article:\n${kbPage.title}\n${kbPage.url}`;
+    }
+
+    /* ============================
+       POST COMMENT TO JIRA (v3 ADF)
+    ============================ */
+
     await axios.post(
       `${process.env.JIRA_BASE_URL}/rest/api/3/issue/${issueKey}/comment`,
       {
@@ -121,7 +184,7 @@ app.post("/jira-webhook", async (req, res) => {
               content: [
                 {
                   type: "text",
-                  text: `🤖 AI Analysis:\n\n${aiResponse}`
+                  text: ` AI Analysis:\n\n${aiResponse}`
                 }
               ]
             }
@@ -144,11 +207,16 @@ app.post("/jira-webhook", async (req, res) => {
 
     res.status(200).send("Success");
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("Error:", error.response?.data || error.message);
     res.status(500).send("Error occurred");
   }
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+/* ============================
+   START SERVER
+============================ */
+
+const PORT = process.env.PORT || 1000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
