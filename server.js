@@ -23,38 +23,41 @@ const openai = new OpenAI({
 ============================ */
 
 function getConfluenceLink(summary, description) {
-  const text = (summary + " " + description).toLowerCase().replace(/[\W_]+/g, " "); // replace punctuation/underscores with space
+  const text = (summary + " " + description)
+  .toLowerCase()
+  .replace(/[\W_]+/g, " "); // replace punctuation/underscores with space
+
   console.log("Combined text for KB lookup:", text);
 
-  if (/password\s*reset/.test(text)) {
+  if (text.includes("password reset")) {
     return {
       title: "Password Reset Failure Guide",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/851969/Password+Reset+Failure+Guide"
     };
   }
 
-  if (/session\s*expired/.test(text)) {
+  if (text.includes("session expired")) {
     return {
       title: "Session Expired Troubleshooting",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/917505/Session+Expired+Troubleshooting"
     };
   }
 
-    if (/account\s*locked/.test(text)) {
+  if (text.includes("account locked")) {
     return {
       title: "Account Locked Resolution Steps",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/917512/Account+Locked+Resolution+Steps"
     };
   }
 
-  if (/sso/.test(text)) {
+  if (text.includes("sso")) {
     return {
       title: "SSO Login Troubleshooting",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/983041/SSO+Login+Troubleshooting"
     };
   }
 
-  if (/mfa|otp/.test(text)) {
+  if (text.includes("mfa") || text.includes("otp")) {
     return {
       title: "Multi-Factor Authentication Issues",
       url: "https://sesha3-cxone-prod.atlassian.net/wiki/spaces/~7120200716321e790240d4b41e5f881fde3e4d/pages/1081345/Multi-Factor+Authentication+Issues"
